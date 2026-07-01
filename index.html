@@ -194,11 +194,50 @@
         const selectedProfile = ref(null);
         const chatInput = ref('');
 
-        // Load existing profiles and messages from localStorage on initialization
-        const profiles = ref(JSON.parse(localStorage.getItem('nicat_profiles') || '[]'));
-        const messages = ref(JSON.parse(localStorage.getItem('nicat_messages') || '[]'));
+        // Prebuilt demonstration seed profiles so the directory is never empty on the web
+        const defaultProfiles = [
+          {
+            id: "9821",
+            name: "Aryan Rashid",
+            title: "Lead UI/UX Architect & Developer",
+            bio: "Building responsive web platforms with modern design systems. Specializing in Tailwind CSS, Vue.js, and product wireframes.",
+            avatar: "🎯",
+            email: "aryan@example.com",
+            whatsapp: "1234567890",
+            instagram: "aryan.design"
+          },
+          {
+            id: "4412",
+            name: "Sarah Jenkins",
+            title: "Full Stack Engineer",
+            bio: "Passionate JavaScript developer focusing on node.js architectures and high-throughput real-time database endpoints.",
+            avatar: "💻",
+            email: "sarah.dev@example.com",
+            whatsapp: "",
+            instagram: "sarah_codes"
+          },
+          {
+            id: "3091",
+            name: "Michael Chen",
+            title: "3D Digital Artist & Motion Designer",
+            bio: "Creating cinematic visual assets, character concept designs, and immersive web graphics solutions for global agencies.",
+            avatar: "🎨",
+            email: "",
+            whatsapp: "9876543210",
+            instagram: "mchen_art"
+          }
+        ];
 
+        // Combine local storage modifications with prebuilt templates
+        const savedProfiles = JSON.parse(localStorage.getItem('nicat_portfolios_v2'));
+        const profiles = ref(savedProfiles || defaultProfiles);
+        
+        const messages = ref(JSON.parse(localStorage.getItem('nicat_chats_v2') || '[]'));
         const form = ref({ name: '', title: '', bio: '', email: '', whatsapp: '', instagram: '' });
+
+        const saveToDisk = () => {
+          localStorage.setItem('nicat_portfolios_v2', JSON.stringify(profiles.value));
+        };
 
         const filteredProfiles = computed(() => {
           if (!searchQuery.value.trim()) return profiles.value;
@@ -219,24 +258,18 @@
           };
 
           profiles.value.unshift(newProfile);
-          
-          // Save updated profiles list to localStorage
-          localStorage.setItem('nicat_profiles', JSON.stringify(profiles.value));
+          saveToDisk();
           
           form.value = { name: '', title: '', bio: '', email: '', whatsapp: '', instagram: '' };
-          alert('Your profile has been registered in the live directory!');
+          alert('Your profile has been saved successfully!');
         };
 
         const deletePortfolio = (id) => {
-          if (confirm("Are you sure you want to permanently delete this portfolio from the live feed?")) {
+          if (confirm("Delete this profile from your current view?")) {
             profiles.value = profiles.value.filter(p => p.id !== id);
-            // Clean up messages belonging to the deleted profile
             messages.value = messages.value.filter(m => m.profileId !== id);
-            
-            // Sync changes back to localStorage
-            localStorage.setItem('nicat_profiles', JSON.stringify(profiles.value));
-            localStorage.setItem('nicat_messages', JSON.stringify(messages.value));
-            
+            saveToDisk();
+            localStorage.setItem('nicat_chats_v2', JSON.stringify(messages.value));
             selectedProfile.value = null;
           }
         };
@@ -257,9 +290,7 @@
             time: timestamp
           });
 
-          // Sync updated conversation storage to localStorage
-          localStorage.setItem('nicat_messages', JSON.stringify(messages.value));
-
+          localStorage.setItem('nicat_chats_v2', JSON.stringify(messages.value));
           chatInput.value = '';
         };
 
