@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PortfoliOasis - Portfolio Search & Chat Directory</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+
+  <div id="app">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-6 py-4 shadow-sm">
+      <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div>
+          <h1 class="text-xl font-extrabold text-indigo-600 tracking-tight">PortfoliOasis</h1>
+          <p class="text-xs text-slate-500">Search Portfolios & Message Creators Directly</p>
+        </div>
+        <div class="text-sm bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full font-medium">
+          ⚡ Serving {{ profiles.length }} Professional Portfolios
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <h2 class="text-base font-bold text-slate-800">Search Discovery Engine</h2>
+          <div class="relative">
+            <input
+              type="text"
+              class="w-full pl-4 pr-16 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all"
+              placeholder="Search by name, job titles, tags ('Figma', 'React')..."
+              v-model="searchQuery"
+            />
+            <button 
+              v-if="searchQuery"
+              @click="searchQuery = ''"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 hover:text-slate-600"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div v-if="filteredProfiles.length === 0" class="text-center py-12 bg-white rounded-2xl border border-slate-200 border-dashed">
+            <span class="text-3xl">🔍</span>
+            <p class="mt-2 text-sm font-medium text-slate-600">No matching talent found.</p>
+          </div>
+
+          <div 
+            v-for="profile in filteredProfiles" 
+            :key="profile.id"
+            @click="selectedProfile = profile"
+            :class="['p-5 bg-white rounded-2xl border transition-all cursor-pointer shadow-sm hover:shadow-md flex gap-4', 
+                     selectedProfile && selectedProfile.id === profile.id ? 'border-indigo-500 ring-2 ring-indigo-500/10' : 'border-slate-200 hover:border-slate-300']"
+          >
+            <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl shrink-0">
+              {{ profile.avatar }}
+            </div>
+            <div class="space-y-2 w-full">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-base">{{ profile.name }}</h3>
+                  <p class="text-xs font-semibold text-indigo-600">{{ profile.title }}</p>
+                </div>
+                <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-mono">ID: {{ profile.id }}</span>
+              </div>
+              <p class="text-xs text-slate-600 line-clamp-2">{{ profile.bio }}</p>
+              
+              <div class="flex gap-2 pt-1 text-[11px] font-medium text-slate-400">
+                <span v-if="profile.email" class="bg-slate-100 px-2 py-0.5 rounded">✉️ Email</span>
+                <span v-if="profile.whatsapp" class="bg-green-50 text-green-600 px-2 py-0.5 rounded">💬 WhatsApp</span>
+                <span v-if="profile.instagram" class="bg-pink-50 text-pink-600 px-2 py-0.5 rounded">📸 Instagram</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        
+        <div v-if="selectedProfile" class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-6 sticky top-24">
+          <div class="flex justify-between items-start">
+            <div class="flex gap-3 items-center">
+              <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl">
+                {{ selectedProfile.avatar }}
+              </div>
+              <div>
+                <h2 class="text-base font-black text-slate-900">{{ selectedProfile.name }}</h2>
+                <p class="text-xs font-bold text-indigo-600">{{ selectedProfile.title }}</p>
+              </div>
+            </div>
+            
+            <div class="flex gap-2">
+              <button @click="deletePortfolio(selectedProfile.id)" class="text-xs text-red-500 hover:text-white hover:bg-red-500 bg-red-50 border border-red-200 px-2 py-1 rounded-md transition-colors">Delete</button>
+              <button @click="selectedProfile = null" class="text-xs text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded-md transition-colors">Close</button>
+            </div>
+          </div>
+
+          <div v-if="selectedProfile.email || selectedProfile.whatsapp || selectedProfile.instagram" class="flex flex-wrap gap-2 pt-1">
+            <a v-if="selectedProfile.email" :href="'mailto:' + selectedProfile.email" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">✉️ Email</a>
+            <a v-if="selectedProfile.whatsapp" :href="'https://wa.me/' + selectedProfile.whatsapp" target="_blank" class="text-xs bg-green-50 hover:bg-green-100 text-green-700 font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">💬 WhatsApp</a>
+            <a v-if="selectedProfile.instagram" :href="'https://instagram.com/' + selectedProfile.instagram" target="_blank" class="text-xs bg-pink-50 hover:bg-pink-100 text-pink-700 font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1">📸 @{{ selectedProfile.instagram }}</a>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">About Me</h4>
+            <p class="text-xs text-slate-600 leading-relaxed">{{ selectedProfile.bio }}</p>
+          </div>
+
+          <div class="border-t border-slate-100 pt-4">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">📬 Live Chat (Direct on Website)</h4>
+            
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 h-40 overflow-y-auto space-y-2 mb-2 text-xs">
+              <div v-if="!getMessages(selectedProfile.id).length" class="text-slate-400 text-center py-8 italic">
+                No messages yet. Start the conversation below!
+              </div>
+              <div v-for="(msg, i) in getMessages(selectedProfile.id)" :key="i" class="bg-white p-2 rounded-lg border border-slate-100 shadow-sm">
+                <div class="flex justify-between text-[10px] font-bold text-indigo-600 mb-0.5">
+                  <span>From: Anonymous Visitor</span>
+                  <span class="text-slate-400 font-normal">{{ msg.time }}</span>
+                </div>
+                <p class="text-slate-700 font-medium">{{ msg.text }}</p>
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <input 
+                type="text" 
+                placeholder="Type a direct message..." 
+                v-model="chatInput"
+                @keyup.enter="sendMessage(selectedProfile.id)"
+                class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <button 
+                @click="sendMessage(selectedProfile.id)"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-4 sticky top-24">
+          <div>
+            <h2 class="text-base font-black text-slate-900">Add Your Portfolio</h2>
+            <p class="text-xs text-slate-400">Instantly populate this search directory live.</p>
+          </div>
+
+          <form @submit.prevent="handleCreatePortfolio" class="space-y-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name *</label>
+              <input type="text" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Jane Doe" v-model="form.name" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Headline *</label>
+              <input type="text" required class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Lead Blockchain Dev" v-model="form.title" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Bio</label>
+              <textarea rows="2" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" placeholder="Tell clients what value you bring..." v-model="form.bio"></textarea>
+            </div>
+
+            <div class="border-t border-slate-100 pt-2 space-y-2">
+              <span class="block text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Contact Methods (Optional)</span>
+              
+              <input type="email" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="✉️ Email Address" v-model="form.email" />
+              <input type="text" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="💬 WhatsApp Number (include country code)" v-model="form.whatsapp" />
+              <input type="text" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="📸 Instagram Username" v-model="form.instagram" />
+            </div>
+
+            <button type="submit" class="w-full mt-2 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
+              Publish My Portfolio Profile
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    const { createApp, ref, computed } = Vue;
+
+    createApp({
+      setup() {
+        const searchQuery = ref('');
+        const selectedProfile = ref(null);
+        const chatInput = ref('');
+
+        // Arrays are now initialized completely empty
+        const messages = ref([]);
+        const profiles = ref([]);
+
+        const form = ref({ name: '', title: '', bio: '', email: '', whatsapp: '', instagram: '' });
+
+        const filteredProfiles = computed(() => {
+          if (!searchQuery.value.trim()) return profiles.value;
+          const query = searchQuery.value.toLowerCase();
+          return profiles.value.filter(p => p.name.toLowerCase().includes(query) || p.title.toLowerCase().includes(query));
+        });
+
+        const handleCreatePortfolio = () => {
+          const newProfile = {
+            id: Date.now().toString().slice(-4),
+            name: form.value.name,
+            title: form.value.title,
+            bio: form.value.bio || 'No biography provided.',
+            avatar: '🚀',
+            skills: ['Generalist'],
+            email: form.value.email || '',
+            whatsapp: form.value.whatsapp || '',
+            instagram: form.value.instagram || '',
+            projects: [{ title: 'Initial Project Drop', desc: 'Registered portfolio project item module.' }]
+          };
+
+          profiles.value.unshift(newProfile);
+          form.value = { name: '', title: '', bio: '', email: '', whatsapp: '', instagram: '' };
+          alert('Your profile has been registered in the live directory!');
+        };
+
+        const deletePortfolio = (id) => {
+          if (confirm("Are you sure you want to permanently delete this portfolio from the live feed?")) {
+            profiles.value = profiles.value.filter(p => p.id !== id);
+            selectedProfile.value = null;
+          }
+        };
+
+        const getMessages = (profileId) => {
+          return messages.value.filter(m => m.profileId === profileId);
+        };
+
+        const sendMessage = (profileId) => {
+          if (!chatInput.value.trim()) return;
+
+          const now = new Date();
+          const timestamp = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          messages.value.push({
+            profileId: profileId,
+            text: chatInput.value,
+            time: timestamp
+          });
+
+          chatInput.value = '';
+        };
+
+        return {
+          profiles,
+          searchQuery,
+          selectedProfile,
+          filteredProfiles,
+          form,
+          chatInput,
+          handleCreatePortfolio,
+          deletePortfolio,
+          getMessages,
+          sendMessage
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
