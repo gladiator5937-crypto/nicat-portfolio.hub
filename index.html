@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PortfoliOasis - Portfolio Search & Chat Directory</title>
+  <title>NICAT PortfolioHub - Portfolio Search & Chat Directory</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
@@ -13,7 +13,7 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-6 py-4 shadow-sm">
       <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
-          <h1 class="text-xl font-extrabold text-indigo-600 tracking-tight">PortfoliOasis</h1>
+          <h1 class="text-xl font-extrabold text-indigo-600 tracking-tight">NICAT PortfolioHub</h1>
           <p class="text-xs text-slate-500">Search Portfolios & Message Creators Directly</p>
         </div>
         <div class="text-sm bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1.5 rounded-full font-medium">
@@ -31,7 +31,7 @@
             <input
               type="text"
               class="w-full pl-4 pr-16 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition-all"
-              placeholder="Search by name, job titles, tags ('Figma', 'React')..."
+              placeholder="Search by name, job titles..."
               v-model="searchQuery"
             />
             <button 
@@ -194,9 +194,9 @@
         const selectedProfile = ref(null);
         const chatInput = ref('');
 
-        // Arrays are now initialized completely empty
-        const messages = ref([]);
-        const profiles = ref([]);
+        // Load existing profiles and messages from localStorage on initialization
+        const profiles = ref(JSON.parse(localStorage.getItem('nicat_profiles') || '[]'));
+        const messages = ref(JSON.parse(localStorage.getItem('nicat_messages') || '[]'));
 
         const form = ref({ name: '', title: '', bio: '', email: '', whatsapp: '', instagram: '' });
 
@@ -213,14 +213,16 @@
             title: form.value.title,
             bio: form.value.bio || 'No biography provided.',
             avatar: '🚀',
-            skills: ['Generalist'],
             email: form.value.email || '',
             whatsapp: form.value.whatsapp || '',
-            instagram: form.value.instagram || '',
-            projects: [{ title: 'Initial Project Drop', desc: 'Registered portfolio project item module.' }]
+            instagram: form.value.instagram || ''
           };
 
           profiles.value.unshift(newProfile);
+          
+          // Save updated profiles list to localStorage
+          localStorage.setItem('nicat_profiles', JSON.stringify(profiles.value));
+          
           form.value = { name: '', title: '', bio: '', email: '', whatsapp: '', instagram: '' };
           alert('Your profile has been registered in the live directory!');
         };
@@ -228,6 +230,13 @@
         const deletePortfolio = (id) => {
           if (confirm("Are you sure you want to permanently delete this portfolio from the live feed?")) {
             profiles.value = profiles.value.filter(p => p.id !== id);
+            // Clean up messages belonging to the deleted profile
+            messages.value = messages.value.filter(m => m.profileId !== id);
+            
+            // Sync changes back to localStorage
+            localStorage.setItem('nicat_profiles', JSON.stringify(profiles.value));
+            localStorage.setItem('nicat_messages', JSON.stringify(messages.value));
+            
             selectedProfile.value = null;
           }
         };
@@ -247,6 +256,9 @@
             text: chatInput.value,
             time: timestamp
           });
+
+          // Sync updated conversation storage to localStorage
+          localStorage.setItem('nicat_messages', JSON.stringify(messages.value));
 
           chatInput.value = '';
         };
